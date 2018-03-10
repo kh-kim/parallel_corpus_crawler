@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 
 INTERVAL = 2
 MAX_FAIL = 100
-MAX_PAGE = 3
+MAX_PAGE = 100
 ALLOW_DUPLICATED = False
 
 URL = 'http://endic.naver.com/search_example.nhn?sLn=kr&examType=example&query=%s&pageNo=%d'
@@ -32,8 +32,7 @@ def get_next_word(word_freq_map, history):
     from operator import itemgetter
     
     candidates = sorted(word_freq_map.items(), key = itemgetter(1), reverse = True)
-    print(candidates)
-
+    
     for word, cnt in candidates:
         if word not in history:
             return word
