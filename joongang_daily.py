@@ -57,6 +57,7 @@ if __name__ == "__main__":
     page_index = 1
     while True:
         url = URL % page_index
+        print(url)
         article_urls = get_article_urls(url, driver_path)
 
         if len(article_urls) == 0:
@@ -67,3 +68,5 @@ if __name__ == "__main__":
 
             if title not in memory:
                 write(title, en, ko, output_fn)
+
+        page_index += 1
