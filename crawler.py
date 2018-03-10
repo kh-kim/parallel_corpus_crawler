@@ -9,11 +9,9 @@ MAX_PAGE = 100
 ALLOW_DUPLICATED = False
 
 URL = 'http://endic.naver.com/search_example.nhn?sLn=kr&examType=example&query=%s&pageNo=%d'
-TYPE_SELECTOR = 'ul > li > div > span'
-TYPE_CLASS_VALUE = "fnt_k09"
+DOMAIN_SELECTOR = 'ul > li > div > span.fnt_k09'
 SRC_SELECTOR = 'ul > li > div > input'
 TGT_SELECTOR = 'ul > li > div > div > a'
-TGT_CLASS_VALUE = "N=a:xmp.detail"
 
 def get_stats(adds, memory, word_freq_map):
     freshs = []
@@ -23,7 +21,7 @@ def get_stats(adds, memory, word_freq_map):
             memory[a] = 0
             freshs += [a]
 
-            for w in a[1].lower().split(' '):
+            for w in a[2].lower().split(' '):
                 word_freq_map[w] = 1 if word_freq_map.get(w) is None else (word_freq_map[w] + 1)
 
     return freshs, memory, word_freq_map
@@ -43,28 +41,35 @@ def get_from_word(word, driver_path):
     collected = []
 
     for page_index in range(1, MAX_PAGE + 1):
-        try:
-            driver = webdriver.PhantomJS(driver_path)
-            driver.get(URL % (word, page_index))
-            soup = BeautifulSoup(driver.page_source, 'html.parser')
+        driver = webdriver.PhantomJS(driver_path)
+        driver.get(URL % (word, page_index))
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
 
-            types = []
-            for i, c in enumerate(soup.select(TYPE_SELECTOR)):
-                if i % 2 == 0:
-                    types += [c.text.strip()]
-            src_sentences = [s.get('value').strip() for s in soup.select(SRC_SELECTOR)]
-            tgt_sentences = [s.text.strip() for s in soup.select(TGT_SELECTOR)[4:]]
-            
-            collected += zip(types, src_sentences, tgt_sentences)
+        confidences = []
+        types = [s.text.strip() for s in soup.select(DOMAIN_SELECTOR)]
+        src_sentences = [s.get('value').strip() for s in soup.select(SRC_SELECTOR)]
+        tgt_sentences = []
 
-            print('%s(%d)' % (word, page_index))
-            for c in zip(types, src_sentences, tgt_sentences):
-                print("%s\t%s\t%s" % (c[0], c[1], c[2]))
+        is_user = False
+        for c in soup.select(TGT_SELECTOR)[4:]:
+            if '\n' in c.text:
+                is_user = True
+            if ("\n" not in c.text) and c.text.strip()[0] != '|':
+                tgt_sentences += [c.text.strip()]
+                confidences += [0 if is_user else 1]
+                is_user = False
+        
+        collected += zip(confidences, types, src_sentences, tgt_sentences)
 
-            driver.close()
-        except:
-            print("Error on %s(%d)" % (word, page_index))
+        print('%s(%d)' % (word, page_index))
+        for c in zip(confidences, types, src_sentences, tgt_sentences):
+            print("%d\t%s\t%s\t%s" % c)
+
+        driver.close()
         time.sleep(INTERVAL)
+
+        if len(collected) == 0:
+            break
 
     return collected
 
@@ -72,7 +77,7 @@ def write(collected, output_fn):
     f = open(output_fn, 'a')
 
     for c in collected:
-        f.write("%s\t%s\t%s\n" % (c[0], c[1], c[2]))
+        f.write("%d\t%s\t%s\t%s\n" % c)
 
     f.close()
 
