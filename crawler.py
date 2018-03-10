@@ -95,6 +95,8 @@ if __name__ == "__main__":
         collected = get_from_word(word, driver_path)
         history += [word]
         freshs, memory, word_freq_map = get_stats(collected, memory, word_freq_map)
+        print('%d/%d sentences are not duplicated. (total: %d)' % (len(freshs), len(collected), len(memory)))
+
         word = get_next_word(word_freq_map, history)
 
         write(freshs, output_fn)
