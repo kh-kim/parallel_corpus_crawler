@@ -36,11 +36,11 @@ def get_next_word(word_freq_map, history):
     for word, cnt in candidates:
         to_print += [(word, cnt)]
         if word not in history:
+            for word, cnt in to_print[-10:]:
+                print('%s\t%d' % (word, cnt))
+
             return word
-
-    for word, cnt in to_print[-10:]:
-        print('%s\t%d' % (word, cnt))
-
+            
     return None
 
 def get_from_word(word, driver_path):
