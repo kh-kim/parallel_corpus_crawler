@@ -3,7 +3,7 @@ import sys, time, codecs, re
 from selenium import webdriver
 from bs4 import BeautifulSoup
 
-INTERVAL = 5
+INTERVAL = 3
 
 BASE_URL = 'http://koreajoongangdaily.joins.com'
 URL = BASE_URL + '/news/list/List.aspx?gCat=060201&pgi=%d'
