@@ -64,9 +64,12 @@ if __name__ == "__main__":
             break
         
         for a_url in article_urls:
-            title, en, ko = get_content(BASE_URL + a_url, driver_path)
+            try:
+                title, en, ko = get_content(BASE_URL + a_url, driver_path)
 
-            if title not in memory:
-                write(title, en, ko, output_fn)
+                if title not in memory:
+                    write(title, en, ko, output_fn)
+            except:
+                pass
 
         page_index += 1
