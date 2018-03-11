@@ -32,9 +32,14 @@ def get_next_word(word_freq_map, history):
     
     candidates = sorted(word_freq_map.items(), key = itemgetter(1), reverse = True)
     
+    to_print = []
     for word, cnt in candidates:
+        to_print += [(word, cnt)]
         if word not in history:
             return word
+
+    for word, cnt in to_print[-10:]:
+        print('%s\t%d' % (word, cnt))
 
     return None
 
