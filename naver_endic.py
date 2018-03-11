@@ -22,6 +22,7 @@ def get_stats(adds, memory, word_freq_map):
             freshs += [a]
 
             for w in a[2].lower().split(' '):
+                w = re.sub('(\\.|,|\\?|!|\\(|\\))', '', w)
                 word_freq_map[w] = 1 if word_freq_map.get(w) is None else (word_freq_map[w] + 1)
 
     return freshs, memory, word_freq_map
@@ -81,6 +82,19 @@ def write(collected, output_fn):
 
     f.close()
 
+def read(fn):
+    collected = []
+
+    f = open(fn, 'r')
+
+    for line in f:
+        if line.strip() != "":
+            collected += [line.strip().split('\t')]
+
+    f.close()
+
+    return collected
+
 if __name__ == "__main__":
     seed = sys.argv[1]
     output_fn = sys.argv[2]
@@ -89,6 +103,13 @@ if __name__ == "__main__":
     memory = {}
     word_freq_map = {}
     history = []
+
+    try:
+        collected = read(output_fn)
+        print('Read %d sentences' % len(collected))
+        freshs, memory, word_freq_map = get_stats(collected, memory, word_freq_map)
+    except:
+        pass
 
     word = seed
     while True:
