@@ -54,7 +54,7 @@ if __name__ == "__main__":
     driver_path = './phantomjs'
 
     memory = []
-    page_index = 1
+    page_index = int(sys.argv[2]) if len(sys.argv) > 2 else 1
     while True:
         url = URL % page_index
         print(url)
