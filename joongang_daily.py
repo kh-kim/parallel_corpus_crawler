@@ -70,6 +70,6 @@ if __name__ == "__main__":
                 if title not in memory:
                     write(title, en, ko, output_fn)
             except:
-                pass
+                print('Error.')
 
         page_index += 1
