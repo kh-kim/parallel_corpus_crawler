@@ -17,12 +17,12 @@ def get_content(url, driver_path):
     driver.get(url)
     soup = BeautifulSoup(driver.page_source, 'html.parser')
 
+    driver.close()
+    time.sleep(INTERVAL)
+
     title = soup.select(TITLE_SELECTOR)[0].text.strip()
     en_content = soup.select(CONTENT_SELECTOR)[0].text.strip()
     ko_content = soup.select(CONTENT_SELECTOR)[1].text.strip()
-
-    driver.close()
-    time.sleep(INTERVAL)
 
     print(title)
     print(en_content)
