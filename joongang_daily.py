@@ -11,6 +11,7 @@ ARTICLE_SELECTOR = 'div > ul > li > dl > dd > a'
 DATE_SELECTOR = 'div > ul > li > dl > dd > span'
 TITLE_SELECTOR = '#sTitle_a'
 CONTENT_SELECTOR = 'div > div.article_content'
+ALT_CONTENT_SELECTOR = 'div.article_dvleft > div > table > tbody > tr > td > font'
 
 def get_content(url, driver_path):
     driver = webdriver.PhantomJS(driver_path)
@@ -23,6 +24,13 @@ def get_content(url, driver_path):
     title = soup.select(TITLE_SELECTOR)[0].text.strip()
     en_content = soup.select(CONTENT_SELECTOR)[0].text.strip()
     ko_content = soup.select(CONTENT_SELECTOR)[1].text.strip()
+
+    if ko_content == '':
+        en_content = soup.select(ALT_CONTENT_SELECTOR)[0].text.strip()
+        ko_content = soup.select(ALT_CONTENT_SELECTOR)[-1].text.strip()
+
+    en_content = re.sub('\\n', '', en_content)
+    ko_content = re.sub('\\n', '', ko_content)
 
     print(title)
     print(en_content)

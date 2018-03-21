@@ -27,7 +27,7 @@ def get_stats(adds, memory, word_freq_map):
 
     return freshs, memory, word_freq_map
 
-def get_next_word(word_freq_map, history):
+def get_next_word(word_freq_map, history, show = True):
     from operator import itemgetter
     
     candidates = sorted(word_freq_map.items(), key = itemgetter(1), reverse = True)
@@ -36,8 +36,9 @@ def get_next_word(word_freq_map, history):
     for word, cnt in candidates:
         to_print += [(word, cnt)]
         if word not in history:
-            for word, cnt in to_print[-10:]:
-                print('%s\t%d' % (word, cnt))
+            if show:
+                for word, cnt in to_print[-10:]:
+                    print('%s\t%d' % (word, cnt))
 
             return word
             
@@ -45,6 +46,7 @@ def get_next_word(word_freq_map, history):
 
 def get_from_word(word, driver_path):
     collected = []
+    zero_cnt = 0
 
     for page_index in range(1, MAX_PAGE + 1):
         driver = webdriver.PhantomJS(driver_path)
@@ -64,6 +66,13 @@ def get_from_word(word, driver_path):
                 tgt_sentences += [c.text.strip()]
                 confidences += [0 if is_user else 1]
                 is_user = False
+
+        if len(confidences) == 0:
+            if zero_cnt > 3:
+                break
+            zero_cnt += 1
+        else:
+            zero_cnt = 0
         
         collected += zip(confidences, types, src_sentences, tgt_sentences)
 
@@ -73,9 +82,6 @@ def get_from_word(word, driver_path):
 
         driver.close()
         time.sleep(INTERVAL)
-
-        if len(collected) == 0:
-            break
 
     return collected
 
@@ -94,7 +100,10 @@ def read(fn):
 
     for line in f:
         if line.strip() != "":
-            collected += [line.strip().split('\t')]
+            tokens = line.strip().split('\t')
+            tokens[0] = int(tokens[0])
+
+            collected += [tuple(tokens)]
 
     f.close()
 
@@ -109,12 +118,19 @@ if __name__ == "__main__":
     word_freq_map = {}
     history = []
 
-    try:
-        collected = read(output_fn)
-        print('Read %d sentences' % len(collected))
-        freshs, memory, word_freq_map = get_stats(collected, memory, word_freq_map)
-    except:
-        pass
+    collected = read(output_fn)
+    print('Read %d sentences' % len(collected))
+    freshs, memory, word_freq_map = get_stats(collected, memory, word_freq_map)
+    
+    while True:
+        next_word = get_next_word(word_freq_map, history, show = False)
+
+        if next_word == seed:
+            print('\t'.join(history))
+            break
+        else:
+            history += [next_word]
+    
 
     word = seed
     while True:
