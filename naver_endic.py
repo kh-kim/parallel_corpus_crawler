@@ -1,8 +1,10 @@
 import sys, time, codecs, re
+import numpy as np
 
 from selenium import webdriver
 from bs4 import BeautifulSoup
 
+NO_CONTENT_ALLOW_THRES = 5
 INTERVAL = 2
 MAX_FAIL = 100
 MAX_PAGE = 100
@@ -11,7 +13,7 @@ ALLOW_DUPLICATED = False
 URL = 'http://endic.naver.com/search_example.nhn?sLn=kr&examType=example&query=%s&pageNo=%d'
 DOMAIN_SELECTOR = 'ul > li > div > span.fnt_k09'
 SRC_SELECTOR = 'ul > li > div > input'
-TGT_SELECTOR = 'ul > li > div > div > a'
+TGT_SELECTOR = 'ul > li > div.mar_top1'
 
 def get_stats(adds, memory, word_freq_map):
     freshs = []
@@ -58,17 +60,30 @@ def get_from_word(word, driver_path):
         src_sentences = [s.get('value').strip() for s in soup.select(SRC_SELECTOR)]
         tgt_sentences = []
 
-        is_user = False
-        for c in soup.select(TGT_SELECTOR)[4:]:
-            if '\n' in c.text:
-                is_user = True
-            if ("\n" not in c.text) and c.text.strip()[0] != '|':
-                tgt_sentences += [c.text.strip()]
-                confidences += [0 if is_user else 1]
-                is_user = False
+        '''
+        print(len(types), len(src_sentences), len(soup.select(TGT_SELECTOR)))
+        for i, c in enumerate(soup.select('ul > li > div.mar_top1')):
+            if '\n' not in c.text.strip():
+                print(i, c.text.strip())
+            else:
+                for j, t in enumerate(c.text.strip().split('\n')):
+                    print(i, j, t)
+                    '''
 
-        if len(confidences) == 0:
-            if zero_cnt > 3:
+        for c in soup.select(TGT_SELECTOR):
+            if '\n' in c.text.strip():
+                if len(c.text.strip().split('\n')) >= 11:
+                    tgt_sentences += [c.text.strip().split('\n')[11]]
+                    confidences += [1]
+                else:
+                    tgt_sentences += ['']
+                    confidences += [0]
+            if '\n' not in c.text.strip():
+                tgt_sentences += [c.text.strip()]
+                confidences += [2]
+
+        if len(confidences) == 0 or np.sum(confidences) == 0:
+            if zero_cnt > NO_CONTENT_ALLOW_THRES:
                 break
             zero_cnt += 1
         else:
@@ -96,16 +111,19 @@ def write(collected, output_fn):
 def read(fn):
     collected = []
 
-    f = open(fn, 'r')
+    try:
+        f = open(fn, 'r')
+    
+        for line in f:
+            if line.strip() != "":
+                tokens = line.strip().split('\t')
+                tokens[0] = int(tokens[0])
 
-    for line in f:
-        if line.strip() != "":
-            tokens = line.strip().split('\t')
-            tokens[0] = int(tokens[0])
+                collected += [tuple(tokens)]
 
-            collected += [tuple(tokens)]
-
-    f.close()
+        f.close()
+    except:
+        pass
 
     return collected
 
@@ -124,6 +142,9 @@ if __name__ == "__main__":
     
     while True:
         next_word = get_next_word(word_freq_map, history, show = False)
+
+        if len(collected) == 0:
+            break
 
         if next_word == seed:
             print('\t'.join(history))
