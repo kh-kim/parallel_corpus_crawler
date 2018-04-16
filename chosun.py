@@ -11,7 +11,7 @@ WAIT_UNTIL = 60
 
 BASE_URL = 'http://english.chosun.com'
 URL = 'http://english.chosun.com/svc/list_in/list.html?catid=%s&pn=%d'
-CATEGORIES = ['2', '3', '4', 'G', 'F', '1']
+CATEGORIES = ['F', '1', '3', '4', 'G', '2']
 # National/Politics, North Korea, Business, Sports, Entertainment, Health/Lifestyle
 
 ARTICLE_SELECTOR = 'dl > dt > a'
