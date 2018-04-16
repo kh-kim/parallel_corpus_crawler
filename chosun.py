@@ -11,7 +11,7 @@ WAIT_UNTIL = 60
 
 BASE_URL = 'http://english.chosun.com'
 URL = 'http://english.chosun.com/svc/list_in/list.html?catid=%s&pn=%d'
-CATEGORIES = ['1', 'F', '2', '3', '4', 'G'] 
+CATEGORIES = ['2', '3', '4', 'G', 'F', '1']
 # National/Politics, North Korea, Business, Sports, Entertainment, Health/Lifestyle
 
 ARTICLE_SELECTOR = 'dl > dt > a'
@@ -20,7 +20,8 @@ KO_ARTICLE_SELECTOR = 'div > div > a'
 ARTICLE_TITLE_ID = '#news_title_text_id'
 ARTICLE_BODY = '#news_body_id > div > p'
 
-KO_ARTICLE_TITLE_ID = '#news_title_text_id'
+BIZ_CHOSUN = 'biz.chosun.com'
+KO_ARTICLE_TITLE_ID = ['#news_title_text_id', '#title_text']
 KO_ARTICLE_BODY = ['#news_body_id > div', '#article_2011']
 EXCEPTIONS = ['영문으로 이 기사 읽기']
 
@@ -29,8 +30,7 @@ def get_article_urls(url, driver_path):
 
     driver = webdriver.PhantomJS(driver_path)
     try:
-        #element = WebDriverWait(driver, WAIT_UNTIL).until(EC.presence_of_element_located((By.ID, "myDynamicElement")))
-        driver.implicitly_wait(WAIT_UNTIL)
+        driver.set_page_load_timeout(WAIT_UNTIL)
         driver.get(url)
         soup = BeautifulSoup(driver.page_source, 'html.parser')
 
@@ -53,8 +53,7 @@ def get_article(url, driver_path):
 
     driver = webdriver.PhantomJS(driver_path)
     try:
-        #element = WebDriverWait(driver, WAIT_UNTIL).until(EC.presence_of_element_located((By.ID, "myDynamicElement")))
-        driver.implicitly_wait(WAIT_UNTIL)
+        driver.set_page_load_timeout(WAIT_UNTIL)
         driver.get(url)
         soup = BeautifulSoup(driver.page_source, 'html.parser')
 
@@ -70,7 +69,8 @@ def get_article(url, driver_path):
         time.sleep(INTERVAL)
 
         return title, contents, ko_article_url
-    except:
+    except Exception as e:
+        print(e)
         driver.quit()        
         time.sleep(INTERVAL)
 
@@ -79,14 +79,17 @@ def get_article(url, driver_path):
 def get_korean_article(url, driver_path):
     print(url)
 
+    selector_index = 0
+    if BIZ_CHOSUN in url:
+        selector_index = 1
+
     driver = webdriver.PhantomJS(driver_path)
     try:
-        #element = WebDriverWait(driver, WAIT_UNTIL).until(EC.presence_of_element_located((By.ID, "myDynamicElement")))
-        driver.implicitly_wait(WAIT_UNTIL)
+        driver.set_page_load_timeout(WAIT_UNTIL)
         driver.get(url)
         soup = BeautifulSoup(driver.page_source, 'html.parser')
 
-        title = soup.select(KO_ARTICLE_TITLE_ID)[0].text.strip()
+        title = soup.select(KO_ARTICLE_TITLE_ID[selector_index])[0].text.strip()
 
         if len(soup.select(KO_ARTICLE_BODY[0])) > 0:
             contents = []
@@ -118,7 +121,8 @@ def get_korean_article(url, driver_path):
         time.sleep(INTERVAL)
 
         return title, contents
-    except:
+    except Exception as e:
+        print(e)
         driver.quit()
         time.sleep(INTERVAL)
 
@@ -153,6 +157,7 @@ if __name__ == "__main__":
 
     for category in CATEGORIES:
         page_index = 1
+        fail_cnt = 0
 
         while True:
             url = URL % (category, page_index)
@@ -160,7 +165,12 @@ if __name__ == "__main__":
             article_urls = get_article_urls(url, driver_path)
             
             if len(article_urls) == 0:
-                break
+                fail_cnt += 1
+
+                if fail_cnt > 5:
+                    break
+            else:
+                fail_cnt = 0
 
             for article_url in article_urls:
                 article_id = article_url.split('/')[-1].split('.')[0]

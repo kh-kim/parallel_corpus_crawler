@@ -6,8 +6,8 @@ from bs4 import BeautifulSoup
 DRIVER_PATH = './phantomjs'
 
 # You should change these.
-URL = 'http://news.chosun.com/site/data/html_dir/2017/05/25/2017052500251.html'
-SELECTOR = '#news_body_id > div'
+URL = 'http://english.chosun.com/site/data/html_dir/2016/01/29/2016012901539.html'
+SELECTOR = '#news_body_id > div > p'
 
 driver = webdriver.PhantomJS(DRIVER_PATH)
 driver.get(URL)
