@@ -7,11 +7,12 @@ INTERVAL = 3
 
 BASE_URL = 'http://koreajoongangdaily.joins.com'
 URL = BASE_URL + '/news/list/List.aspx?gCat=060201&pgi=%d'
-ARTICLE_SELECTOR = 'div > ul > li > dl > dd > a'
+ARTICLE_SELECTOR = '#news_list > div > ul > li > dl > dt > a'
 DATE_SELECTOR = 'div > ul > li > dl > dd > span'
 TITLE_SELECTOR = '#sTitle_a'
 CONTENT_SELECTOR = 'div > div.article_content'
-ALT_CONTENT_SELECTOR = 'div.article_dvleft > div > table > tbody > tr > td > font'
+ALT_CONTENT_SELECTOR = '#articlebody > div.article_dvleft > div'
+ALT_CONTENT_SELECTOR2 = '#articlebody > div.article_dvleft > div > p'
 
 def get_content(url, driver_path):
     driver = webdriver.PhantomJS(driver_path)
@@ -22,19 +23,27 @@ def get_content(url, driver_path):
     time.sleep(INTERVAL)
 
     title = soup.select(TITLE_SELECTOR)[0].text.strip()
-    en_content = soup.select(CONTENT_SELECTOR)[0].text.strip()
-    ko_content = soup.select(CONTENT_SELECTOR)[1].text.strip()
+    if len(soup.select(CONTENT_SELECTOR)) > 0:
+        en_content = soup.select(CONTENT_SELECTOR)[0].text.strip()
+        ko_content = soup.select(CONTENT_SELECTOR)[1].text.strip()
 
-    if ko_content == '':
+    if len(soup.select(CONTENT_SELECTOR)) == 0 or ko_content == '':
         en_content = soup.select(ALT_CONTENT_SELECTOR)[0].text.strip()
         ko_content = soup.select(ALT_CONTENT_SELECTOR)[-1].text.strip()
 
-    en_content = re.sub('\\n', '', en_content)
-    ko_content = re.sub('\\n', '', ko_content)
+    en_content = re.sub('\\n', ' ', en_content)
+    ko_content = re.sub('\\n', ' ', ko_content)
 
+    if en_content == ko_content:
+        ko_content = soup.select(ALT_CONTENT_SELECTOR2)[0].text.strip()
+        ko_content = re.sub('\\n', ' ', ko_content)
+        en_content = en_content[:-len(ko_content)]
+
+    print(url)
     print(title)
     print(en_content)
     print(ko_content)
+    print('')
 
     return title, en_content, ko_content
 
@@ -43,6 +52,8 @@ def get_article_urls(url, driver_path):
     driver.get(url)
     soup = BeautifulSoup(driver.page_source, 'html.parser')
 
+    print(len(soup.select(ARTICLE_SELECTOR)))
+    print('\n'.join(['%d: %s\t%s' % (i, s.get('href').strip(), s.text.strip()) for i, s in enumerate(soup.select(ARTICLE_SELECTOR))]))
     articles = [s.get('href').strip() for s in soup.select(ARTICLE_SELECTOR)][-10:]
     
     driver.close()
@@ -77,7 +88,7 @@ if __name__ == "__main__":
 
                 if title not in memory:
                     write(title, en, ko, output_fn)
-            except:
-                print('Error.')
+            except Exception as e:
+                print(e)
 
         page_index += 1
