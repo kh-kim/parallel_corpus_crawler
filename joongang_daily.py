@@ -11,6 +11,7 @@ ARTICLE_SELECTOR = '#news_list > div > ul > li > dl > dt > a'
 DATE_SELECTOR = 'div > ul > li > dl > dd > span'
 TITLE_SELECTOR = '#sTitle_a'
 CONTENT_SELECTOR = 'div > div.article_content'
+EXCLUDE_CONTENT_SELECTORS = ['div > div.article_content > b', 'div > div.article_content > font']
 ALT_CONTENT_SELECTOR = '#articlebody > div.article_dvleft > div'
 ALT_CONTENT_SELECTOR2 = '#articlebody > div.article_dvleft > div > p'
 
@@ -27,12 +28,17 @@ def get_content(url, driver_path):
         en_content = soup.select(CONTENT_SELECTOR)[0].text.strip()
         ko_content = soup.select(CONTENT_SELECTOR)[1].text.strip()
 
-    if len(soup.select(CONTENT_SELECTOR)) == 0 or ko_content == '':
+        for selector in EXCLUDE_CONTENT_SELECTORS:
+            for excluded in soup.select(selector):
+                en_content = en_content.replace(excluded.text.strip(), '')
+                ko_content = ko_content.replace(excluded.text.strip(), '')
+
+    if (len(soup.select(CONTENT_SELECTOR)) == 0 or ko_content == '') and len(soup.select(ALT_CONTENT_SELECTOR)) > 0:
         en_content = soup.select(ALT_CONTENT_SELECTOR)[0].text.strip()
         ko_content = soup.select(ALT_CONTENT_SELECTOR)[-1].text.strip()
 
-    en_content = re.sub('\\n', ' ', en_content)
-    ko_content = re.sub('\\n', ' ', ko_content)
+    en_content = re.sub('\\n', ' ', en_content).strip()
+    ko_content = re.sub('\\n', ' ', ko_content).strip()
 
     if en_content == ko_content:
         ko_content = soup.select(ALT_CONTENT_SELECTOR2)[0].text.strip()
