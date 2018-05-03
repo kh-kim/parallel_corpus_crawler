@@ -10,6 +10,7 @@ URL = BASE_URL + '/news/list/List.aspx?gCat=060201&pgi=%d'
 ARTICLE_SELECTOR = '#news_list > div > ul > li > dl > dt > a'
 DATE_SELECTOR = 'div > ul > li > dl > dd > span'
 TITLE_SELECTOR = '#sTitle_a'
+OLD_CONTENT_SELECTOR = '#articlebody > div.article_dvleft > div > table > tbody > tr > td'
 CONTENT_SELECTOR = 'div > div.article_content'
 EXCLUDE_CONTENT_SELECTORS = ['div > div.article_content > b', 'div > div.article_content > font']
 ALT_CONTENT_SELECTOR = '#articlebody > div.article_dvleft > div'
@@ -24,7 +25,11 @@ def get_content(url, driver_path):
     time.sleep(INTERVAL)
 
     title = soup.select(TITLE_SELECTOR)[0].text.strip()
-    if len(soup.select(CONTENT_SELECTOR)) > 0:
+    print(len(soup.select(OLD_CONTENT_SELECTOR)), len(soup.select(CONTENT_SELECTOR)), len(soup.select(ALT_CONTENT_SELECTOR)))
+    if len(soup.select(OLD_CONTENT_SELECTOR)) > 0:
+        en_content = soup.select(OLD_CONTENT_SELECTOR)[0].text.strip()
+        ko_content = soup.select(OLD_CONTENT_SELECTOR)[-1].text.strip()
+    elif len(soup.select(CONTENT_SELECTOR)) > 0:
         en_content = soup.select(CONTENT_SELECTOR)[0].text.strip()
         ko_content = soup.select(CONTENT_SELECTOR)[1].text.strip()
 
