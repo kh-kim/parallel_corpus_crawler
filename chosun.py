@@ -11,14 +11,15 @@ WAIT_UNTIL = 60
 
 BASE_URL = 'http://english.chosun.com'
 URL = 'http://english.chosun.com/svc/list_in/list.html?catid=%s&pn=%d'
-CATEGORIES = ['G', '2', 'F', '1', '3', '4']
+CATEGORIES = ['1', '3', '4'] #['G', '2', 'F', '1', '3', '4']
 # National/Politics, North Korea, Business, Sports, Entertainment, Health/Lifestyle
 
-ARTICLE_SELECTOR = 'dl > dt > a'
+ARTICLE_SELECTOR = '#list_area > dl > dt > a'
 KO_ARTICLE_SELECTOR = 'div > div > a'
 
 ARTICLE_TITLE_ID = '#news_title_text_id'
 ARTICLE_BODY = '#news_body_id > div > p'
+ARTICLE_BODY_ALTER = '#news_body_id > div.par'
 
 BIZ_CHOSUN = 'biz.chosun.com'
 KO_ARTICLE_TITLE_ID = ['#news_title_text_id', '#title_text']
@@ -34,7 +35,7 @@ def get_article_urls(url, driver_path):
         driver.get(url)
         soup = BeautifulSoup(driver.page_source, 'html.parser')
 
-        articles = [s.get('href').strip() for s in soup.select(ARTICLE_SELECTOR)][:10]
+        articles = [s.get('href').strip() for s in soup.select(ARTICLE_SELECTOR)][:10] 
         
         driver.close()
 
@@ -48,6 +49,9 @@ def get_article_urls(url, driver_path):
         return []
 
 def get_article(url, driver_path):
+    if BASE_URL == url:
+        return None, None, None
+
     url = BASE_URL + url
     print(url)
 
@@ -64,6 +68,8 @@ def get_article(url, driver_path):
         title = soup.select(ARTICLE_TITLE_ID)[0].text.strip()
 
         contents = [s.text.strip() for s in soup.select(ARTICLE_BODY)]
+        if len(contents) == 0:
+            contents = [s.text.strip() for s in soup.select(ARTICLE_BODY_ALTER)]
 
         driver.close()
         time.sleep(INTERVAL)
@@ -88,6 +94,9 @@ def get_korean_article(url, driver_path):
         driver.set_page_load_timeout(WAIT_UNTIL)
         driver.get(url)
         soup = BeautifulSoup(driver.page_source, 'html.parser')
+
+        for br_tag in soup.find_all('br'):
+            br_tag.replace_with('\n')
 
         title = soup.select(KO_ARTICLE_TITLE_ID[selector_index])[0].text.strip()
 
